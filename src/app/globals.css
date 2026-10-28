@@ -1,0 +1,127 @@
+:root {
+  --bg: #f3f4f6;
+  --panel: #ffffff;
+  --ink: #1b1f24;
+  --sub: #5f6b76;
+  --line: #e2e5e9;
+  --brand: #1f2a37;
+  --accent: #e8730c;
+  --ok: #1e8e4e;
+  --ok-bg: #e6f5ec;
+  --block: #c62828;
+  --block-bg: #fdecec;
+  --wait: #b26a00;
+  --wait-bg: #fff4e0;
+  --off: #6b7280;
+  --off-bg: #eef0f2;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", Meiryo, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; cursor: pointer; }
+input, textarea { font: inherit; }
+
+/* ===== ヘッダ ===== */
+.hdr {
+  background: var(--brand); color: #fff;
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; position: sticky; top: 0; z-index: 1000;
+}
+.hdr h1 { font-size: 16px; margin: 0; letter-spacing: .04em; }
+.hdr h1 span { color: var(--accent); }
+.hdr .sp { flex: 1; }
+.hdr .who { font-size: 13px; opacity: .8; }
+.hdr button { background: transparent; color: #fff; border: 1px solid #ffffff55; border-radius: 6px; padding: 4px 10px; }
+
+/* ===== サマリー ===== */
+.summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 14px 16px 0; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; }
+.stat .n { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat .l { font-size: 12px; color: var(--sub); }
+.stat.block .n { color: var(--block); }
+.stat.wait .n { color: var(--wait); }
+.stat.off .n { color: var(--off); }
+
+/* ===== メイン ===== */
+.main { display: grid; grid-template-columns: 380px 1fr; gap: 14px; padding: 14px 16px 16px; }
+.col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+.panel h2 { font-size: 13px; margin: 0; padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--sub); font-weight: 600; }
+
+.search { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+
+.vlist { display: flex; flex-direction: column; gap: 8px; max-height: calc(100vh - 230px); overflow: auto; }
+.vcard {
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 10px 12px; text-align: left; width: 100%;
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 8px;
+}
+.vcard:hover { border-color: #b9c0c8; }
+.vcard.sel { border-color: var(--accent); box-shadow: 0 0 0 2px #e8730c33; }
+.vcard .nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vcard .meta { grid-column: 1 / -1; font-size: 12px; color: var(--sub); }
+
+.badge { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; align-self: start; }
+.badge.ok { color: var(--ok); background: var(--ok-bg); }
+.badge.block { color: var(--block); background: var(--block-bg); }
+.badge.wait { color: var(--wait); background: var(--wait-bg); }
+.badge.off { color: var(--off); background: var(--off-bg); }
+
+.map { height: 420px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: #e9ecef; }
+
+/* ===== 詳細 ===== */
+.detail { padding: 12px; display: grid; gap: 12px; }
+.drow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.kv .k { font-size: 11px; color: var(--sub); }
+.kv .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+.edit { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
+.edit input { padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; }
+.btn { border-radius: 8px; padding: 8px 14px; border: 1px solid var(--line); background: #fff; font-weight: 600; }
+.btn.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+.btn.danger { background: var(--block); color: #fff; border-color: var(--block); }
+.btn.safe { background: var(--ok); color: #fff; border-color: var(--ok); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.hint { font-size: 12px; color: var(--sub); }
+.empty { padding: 24px; text-align: center; color: var(--sub); }
+
+/* ===== 履歴 ===== */
+.logs { max-height: 260px; overflow: auto; }
+.logs table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.logs td { padding: 6px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.logs td.t { white-space: nowrap; color: var(--sub); font-variant-numeric: tabular-nums; }
+
+/* ===== 確認ダイアログ ===== */
+.modal-bg { position: fixed; inset: 0; background: #0009; display: grid; place-items: center; z-index: 2000; padding: 16px; }
+.modal { background: #fff; border-radius: 12px; max-width: 460px; width: 100%; padding: 18px; display: grid; gap: 12px; }
+.modal h3 { margin: 0; font-size: 17px; }
+.modal .warn { background: var(--block-bg); color: #7f1d1d; border-radius: 8px; padding: 10px 12px; font-size: 13px; }
+.modal .warn.ok { background: var(--ok-bg); color: #14532d; }
+.modal textarea { width: 100%; min-height: 64px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; }
+.modal .row { display: flex; gap: 10px; justify-content: flex-end; }
+
+/* ===== ログイン ===== */
+.login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+.login form { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 24px; width: 100%; max-width: 340px; display: grid; gap: 12px; }
+.login h1 { margin: 0; font-size: 20px; }
+.login h1 span { color: var(--accent); }
+.login input { padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+.login .err { color: var(--block); font-size: 13px; }
+
+@media (max-width: 900px) {
+  .main { grid-template-columns: 1fr; }
+  .vlist { max-height: none; }
+  .summary { grid-template-columns: repeat(2, 1fr); }
+  .drow { grid-template-columns: repeat(2, 1fr); }
+  .edit { grid-template-columns: 1fr; }
+  .map { height: 320px; }
+}
