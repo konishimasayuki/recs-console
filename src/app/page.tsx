@@ -84,7 +84,6 @@ export default function Dashboard() {
     location.href = "/login";
   }
 
-  const demoCount = vehicles.filter((v) => v.demo).length;
   const filLabel = { block: "始動阻止中", wait: "反映待ち", off: "通信断" } as const;
 
   return (
@@ -95,11 +94,6 @@ export default function Dashboard() {
         <button onClick={logout}>ログアウト</button>
       </header>
 
-      {demoCount > 0 && (
-        <div className="demo-bar">
-          <span>デモ中の車両が {demoCount} 台あります（通信している扱いで動いています）。本番運用の前に各車両の詳細画面でOFFにしてください。</span>
-        </div>
-      )}
 
       <section className="summary">
         {([
