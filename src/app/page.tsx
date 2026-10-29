@@ -56,6 +56,7 @@ export default function Dashboard() {
   const [sel, setSel] = useState<string | null>(null);
   const [track, setTrack] = useState<[number, number][]>([]);
   const [q, setQ] = useState("");
+  const [fil, setFil] = useState<"all" | "block" | "wait" | "off">("all");
   const [loaded, setLoaded] = useState(false);
   const [confirm, setConfirm] = useState<null | { relay: 0 | 1 }>(null);
   const [note, setNote] = useState("");
@@ -93,9 +94,11 @@ export default function Dashboard() {
 
   const filtered = useMemo(() => {
     const k = q.trim().toLowerCase();
-    if (!k) return vehicles;
-    return vehicles.filter((v) => `${v.name} ${v.memo} ${v.id}`.toLowerCase().includes(k));
-  }, [vehicles, q]);
+    return vehicles.filter((v) =>
+      (fil === "all" || statusOf(v, now, offlineAfterMs).key === fil) &&
+      (!k || `${v.name} ${v.memo} ${v.id}`.toLowerCase().includes(k))
+    );
+  }, [vehicles, q, fil, now, offlineAfterMs]);
 
   const counts = useMemo(() => {
     const c = { all: vehicles.length, block: 0, wait: 0, off: 0 };
@@ -171,15 +174,28 @@ export default function Dashboard() {
       )}
 
       <section className="summary">
-        <div className="stat"><div className="n">{counts.all}</div><div className="l">登録車両</div></div>
-        <div className="stat block"><div className="n">{counts.block}</div><div className="l">始動阻止中</div></div>
-        <div className="stat wait"><div className="n">{counts.wait}</div><div className="l">反映待ち</div></div>
-        <div className="stat off"><div className="n">{counts.off}</div><div className="l">通信途絶</div></div>
+        {([
+          ["all", "", counts.all, "登録車両"],
+          ["block", "block", counts.block, "始動阻止中"],
+          ["wait", "wait", counts.wait, "反映待ち"],
+          ["off", "off", counts.off, "通信途絶"],
+        ] as const).map(([key, cls, n, label]) => (
+          <button key={key} type="button" className={`stat ${cls} ${fil === key ? "on" : ""}`}
+            aria-pressed={fil === key} onClick={() => setFil(key)}>
+            <div className="n">{n}</div><div className="l">{label}</div>
+          </button>
+        ))}
       </section>
 
       <main className="main">
         <div className="col">
           <input className="search" placeholder="🔍 検索（名前・メモ・ID）" value={q} onChange={(e) => setQ(e.target.value)} />
+          {fil !== "all" && (
+            <div className="fil-chip">
+              {({ block: "始動阻止中", wait: "反映待ち", off: "通信途絶" } as const)[fil]}の車両だけ表示中
+              <button type="button" onClick={() => setFil("all")}>全車両に戻す</button>
+            </div>
+          )}
           <div className="vlist">
             {loaded && filtered.length === 0 && (
               <div className="panel empty">
