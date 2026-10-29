@@ -147,18 +147,6 @@ export default function Dashboard() {
     load();
   }
 
-  async function allDemoOff() {
-    setBusy(true);
-    for (const v of vehicles.filter((x) => x.demo)) {
-      await fetch(`/api/vehicles/${encodeURIComponent(v.id)}/demo`, {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ on: false }),
-      });
-    }
-    setBusy(false);
-    load();
-  }
-
   async function logout() {
     await fetch("/api/logout", { method: "POST" });
     location.href = "/login";
@@ -178,8 +166,7 @@ export default function Dashboard() {
 
       {demoCount > 0 && (
         <div className="demo-bar">
-          <span>デモ中の車両が {demoCount} 台あります（通信している扱いで動いています）。本番運用の前にOFFにしてください。</span>
-          <button className="btn" disabled={busy} onClick={allDemoOff}>すべてOFF</button>
+          <span>デモ中の車両が {demoCount} 台あります（通信している扱いで動いています）。本番運用の前に各車両の詳細欄でOFFにしてください。</span>
         </div>
       )}
 
