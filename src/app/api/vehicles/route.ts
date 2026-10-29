@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/session";
-import { listVehicles, updateInfo, OFFLINE_AFTER_MS, REPORT_INTERVAL_SEC } from "@/lib/vehicles";
+import { listVehicles, updateInfo, tickDemoVehicles, OFFLINE_AFTER_MS, REPORT_INTERVAL_SEC } from "@/lib/vehicles";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   if (!(await getUser(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  try {
+    await tickDemoVehicles(); // DEMO_IDS が空なら何もしない
+  } catch (e) {
+    console.error("demo tick failed", e);
+  }
   return NextResponse.json({
     now: Date.now(),
     offlineAfterMs: OFFLINE_AFTER_MS,

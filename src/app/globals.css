@@ -125,3 +125,14 @@ input, textarea { font: inherit; }
   .edit { grid-template-columns: 1fr; }
   .map { height: 320px; }
 }
+
+/* ===== 地図のピン ===== */
+.recs-pin { background: none; border: none; }
+.recs-pin svg { display: block; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .35)); }
+
+/* ===== デモ車両の目印 ===== */
+.demo-tag {
+  display: inline-block; font-size: 11px; font-weight: 700; line-height: 1;
+  color: #5b21b6; background: #ede9fe; border-radius: 4px;
+  padding: 3px 6px; margin-right: 6px; vertical-align: 2px;
+}

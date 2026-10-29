@@ -23,6 +23,7 @@ export type Vehicle = {
   seen: number | null;  // 最終通信時刻
   fw: string;
   changedAt: number | null;
+  demo: boolean;        // デモ車両（DEMO_IDS に入っている）
 };
 
 export type OpLog = {
@@ -50,6 +51,7 @@ function toVehicle(id: string, h: Record<string, string> | null): Vehicle {
     seen: num(h?.seen),
     fw: h?.fw ?? "",
     changedAt: num(h?.changedAt),
+    demo: isDemo(id),
   };
 }
 
@@ -164,4 +166,50 @@ export async function getTrack(id: string, limit = 200) {
     const [ts, lat, lng] = String(r).split(",").map(Number);
     return { ts, lat, lng };
   });
+}
+
+// ===== デモ機能 =====
+// 環境変数 DEMO_IDS（例: "sim001,sim002"）に入れた車両は、管理画面を開いている間、
+// ずっと通信している扱いにする。実際の車載器がなくても説明・練習ができる。
+// DEMO_IDS を消せば、この機能は完全に止まる。
+const DEMO_IDS = (process.env.DEMO_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+const DEMO_GAP_MS = 8_000;    // 疑似報告の最短間隔
+const DEMO_APPLY_MS = 8_000;  // 阻止の指示を車両が反映するまでの疑似時間
+const DEMO_LOOP_SEC = 600;    // 1周10分で近所をぐるっと回る
+const DEMO_RADIUS = 0.004;    // 約400m
+
+export function isDemo(id: string) {
+  return DEMO_IDS.includes(id);
+}
+
+export async function tickDemoVehicles() {
+  if (DEMO_IDS.length === 0) return;
+  const now = Date.now();
+  for (const [i, id] of DEMO_IDS.entries()) {
+    const h = await store().hgetall(`veh:${id}`);
+    if (!h) continue; // 一度も報告していない車両は対象外
+    const v = toVehicle(id, h);
+    if (v.seen && now - v.seen < DEMO_GAP_MS) continue;
+
+    // 回る中心を最初の位置で固定（遠くへ流れていかないように）
+    let aLat = Number(h.demoLat), aLng = Number(h.demoLng);
+    if (!h.demoLat || !h.demoLng) {
+      aLat = v.lat ?? 33.2063;
+      aLng = v.lng ?? 130.3836;
+      await store().hset(`veh:${id}`, { demoLat: aLat, demoLng: aLng });
+    }
+    const ang = ((now / 1000) / DEMO_LOOP_SEC) * 2 * Math.PI + i * 2.1;
+    const lat = aLat + DEMO_RADIUS * Math.sin(ang);
+    const lng = aLng + DEMO_RADIUS * 1.2 * Math.cos(ang);
+
+    const relay =
+      v.pending === 1 && v.changedAt !== null && now - v.changedAt >= DEMO_APPLY_MS
+        ? v.desired
+        : v.actual === -1 ? 0 : v.actual;
+
+    await handleReport(id, {
+      relay, lat: +lat.toFixed(6), lng: +lng.toFixed(6), fix: 1,
+      rssi: 18 + ((Math.floor(now / 10_000) + i) % 8), fw: "demo",
+    });
+  }
 }

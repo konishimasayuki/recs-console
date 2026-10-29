@@ -44,6 +44,7 @@ Upstash Redis（車両の状態・位置履歴・操作履歴）
 | `UPSTASH_REDIS_REST_URL` | Upstashの接続先 | 手順3で自動 |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstashのトークン | 手順3で自動 |
 | `REPORT_INTERVAL_SEC` | 車載器の報告間隔（秒）。省略時300 | 300 |
+| `DEMO_IDS` | デモ車両のID（カンマ区切り）。管理画面を開いている間、ずっと通信している扱いになり、阻止の指示も約10秒で反映された扱いになる。説明会・練習用。本番運用では空にする | sim001,sim002 |
 
 > Upstashを設定しないと、データはメモリに入るだけでデプロイのたびに消える（手元テスト用の動き）。
 

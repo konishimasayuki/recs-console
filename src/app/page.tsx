@@ -12,7 +12,7 @@ type Vehicle = {
   id: string; name: string; memo: string;
   desired: 0 | 1; actual: 0 | 1 | -1; pending: 0 | 1;
   lat: number | null; lng: number | null; fixAt: number | null;
-  rssi: number | null; seen: number | null; fw: string; changedAt: number | null;
+  rssi: number | null; seen: number | null; fw: string; changedAt: number | null; demo?: boolean;
 };
 type OpLog = { ts: number; id: string; name: string; action: string; by: string; note?: string };
 type Status = { key: "ok" | "block" | "wait" | "off"; label: string; color: string };
@@ -179,7 +179,7 @@ export default function Dashboard() {
                     setTimeout(() => document.getElementById("detail")?.scrollIntoView({ behavior: "smooth" }), 50);
                   }
                 }}>
-                  <div className="nm">{v.name || "（名前未設定）"}</div>
+                  <div className="nm">{v.demo && <span className="demo-tag">デモ</span>}{v.name || "（名前未設定）"}</div>
                   <span className={`badge ${s.key}`}>{s.label}</span>
                   <div className="meta">ID {v.id}・最終通信 {ago(v.seen, now)}{v.memo ? `・${v.memo}` : ""}</div>
                 </button>
@@ -196,11 +196,11 @@ export default function Dashboard() {
           <div className="panel" id="detail">
             <h2>車両の詳細と操作</h2>
             {!selected ? (
-              <div className="empty">一覧か地図の点から車両を選んでください</div>
+              <div className="empty">一覧か地図のピンから車両を選んでください</div>
             ) : (
               <div className="detail">
                 <div className="actions">
-                  <strong style={{ fontSize: 16 }}>{selected.name || "（名前未設定）"}</strong>
+                  <strong style={{ fontSize: 16 }}>{selected.demo && <span className="demo-tag">デモ</span>}{selected.name || "（名前未設定）"}</strong>
                   <span className={`badge ${st!.key}`}>{st!.label}</span>
                 </div>
                 <div className="drow">
