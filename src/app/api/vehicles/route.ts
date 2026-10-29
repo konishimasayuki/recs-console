@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   if (!(await getUser(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {
-    await tickDemoVehicles(); // DEMO_IDS が空なら何もしない
+    await tickDemoVehicles(); // デモONの車両がなければ何もしない
   } catch (e) {
     console.error("demo tick failed", e);
   }

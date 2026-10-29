@@ -23,7 +23,7 @@ export type Vehicle = {
   seen: number | null;  // 最終通信時刻
   fw: string;
   changedAt: number | null;
-  demo: boolean;        // デモ車両（DEMO_IDS に入っている）
+  demo: boolean;        // デモ車両（画面のスイッチでON。通信している扱いになる）
 };
 
 export type OpLog = {
@@ -51,7 +51,7 @@ function toVehicle(id: string, h: Record<string, string> | null): Vehicle {
     seen: num(h?.seen),
     fw: h?.fw ?? "",
     changedAt: num(h?.changedAt),
-    demo: isDemo(id),
+    demo: h?.demo === "1",
   };
 }
 
@@ -169,27 +169,32 @@ export async function getTrack(id: string, limit = 200) {
 }
 
 // ===== デモ機能 =====
-// 環境変数 DEMO_IDS（例: "sim001,sim002"）に入れた車両は、管理画面を開いている間、
-// ずっと通信している扱いにする。実際の車載器がなくても説明・練習ができる。
-// DEMO_IDS を消せば、この機能は完全に止まる。
-const DEMO_IDS = (process.env.DEMO_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+// 管理画面の詳細欄のスイッチで車両ごとにON/OFFする（設定はRedisに保存）。
+// ONの車両は、管理画面を開いている間ずっと通信している扱いになり、
+// 阻止の指示も約10秒で反映された扱いになる。実際の車載器がなくても説明・練習ができる。
+// 実際の車載器から報告が来ても動くが、デモの疑似報告と混ざるので本番車両ではONにしないこと。
 const DEMO_GAP_MS = 8_000;    // 疑似報告の最短間隔
 const DEMO_APPLY_MS = 8_000;  // 阻止の指示を車両が反映するまでの疑似時間
 const DEMO_LOOP_SEC = 600;    // 1周10分で近所をぐるっと回る
 const DEMO_RADIUS = 0.004;    // 約400m
 
-export function isDemo(id: string) {
-  return DEMO_IDS.includes(id);
+export async function setDemo(id: string, on: boolean, by: string) {
+  const v = await getVehicle(id);
+  if (!v) throw new Error("not found");
+  if (v.demo === on) return v;
+  // OFFにする時は回る中心も消す（次にONにした時は、その時の位置から回り始める）
+  await store().hset(`veh:${id}`, on ? { demo: 1 } : { demo: 0, demoLat: "", demoLng: "" });
+  await addLog({ ts: Date.now(), id, name: v.name, action: on ? "デモをON" : "デモをOFF", by });
+  return getVehicle(id);
 }
 
 export async function tickDemoVehicles() {
-  if (DEMO_IDS.length === 0) return;
   const now = Date.now();
-  for (const [i, id] of DEMO_IDS.entries()) {
-    const h = await store().hgetall(`veh:${id}`);
-    if (!h) continue; // 一度も報告していない車両は対象外
-    const v = toVehicle(id, h);
+  const demos = (await listVehicles()).filter((v) => v.demo);
+  for (const [i, v] of demos.entries()) {
     if (v.seen && now - v.seen < DEMO_GAP_MS) continue;
+    const id = v.id;
+    const h = (await store().hgetall(`veh:${id}`)) ?? {};
 
     // 回る中心を最初の位置で固定（遠くへ流れていかないように）
     let aLat = Number(h.demoLat), aLng = Number(h.demoLng);

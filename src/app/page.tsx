@@ -137,11 +137,34 @@ export default function Dashboard() {
     load();
   }
 
+  async function setDemo(id: string, on: boolean) {
+    setBusy(true);
+    await fetch(`/api/vehicles/${encodeURIComponent(id)}/demo`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ on }),
+    });
+    setBusy(false);
+    load();
+  }
+
+  async function allDemoOff() {
+    setBusy(true);
+    for (const v of vehicles.filter((x) => x.demo)) {
+      await fetch(`/api/vehicles/${encodeURIComponent(v.id)}/demo`, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ on: false }),
+      });
+    }
+    setBusy(false);
+    load();
+  }
+
   async function logout() {
     await fetch("/api/logout", { method: "POST" });
     location.href = "/login";
   }
 
+  const demoCount = vehicles.filter((v) => v.demo).length;
   const st = selected ? statusOf(selected, now, offlineAfterMs) : null;
   const minutes = Math.round(intervalSec / 60);
 
@@ -152,6 +175,13 @@ export default function Dashboard() {
         <div className="sp" />
         <button onClick={logout}>ログアウト</button>
       </header>
+
+      {demoCount > 0 && (
+        <div className="demo-bar">
+          <span>デモ中の車両が {demoCount} 台あります（通信している扱いで動いています）。本番運用の前にOFFにしてください。</span>
+          <button className="btn" disabled={busy} onClick={allDemoOff}>すべてOFF</button>
+        </div>
+      )}
 
       <section className="summary">
         <div className="stat"><div className="n">{counts.all}</div><div className="l">登録車両</div></div>
@@ -225,7 +255,7 @@ export default function Dashboard() {
                   <button className="btn safe" disabled={selected.desired === 0} onClick={() => setConfirm({ relay: 0 })}>
                     阻止を解除
                   </button>
-                  <span className="hint">車両が次に通信した時（最大約{minutes}分後）に反映されます</span>
+                  <span className="hint">{selected.demo ? "デモのため約10秒で反映された扱いになります" : `車両が次に通信した時（最大約${minutes}分後）に反映されます`}</span>
                 </div>
 
                 <div className="edit">
@@ -233,6 +263,12 @@ export default function Dashboard() {
                   <input placeholder="メモ（契約者名・契約番号など）" value={edit.memo} onChange={(e) => setEdit({ ...edit, memo: e.target.value })} />
                   <button className="btn" disabled={busy} onClick={saveInfo}>保存</button>
                 </div>
+                <label className="demo-switch">
+                  <input type="checkbox" checked={!!selected.demo} disabled={busy}
+                    onChange={(e) => setDemo(selected.id, e.target.checked)} />
+                  デモ（通信している扱い）
+                  <span className="hint">説明・練習用。ONにすると約10秒ごとに疑似報告し、阻止の指示も約10秒で反映された扱いになります。本物の車両ではONにしないでください</span>
+                </label>
                 <div className="hint">ID {selected.id}{selected.fw ? `・ファーム ${selected.fw}` : ""}</div>
               </div>
             )}
