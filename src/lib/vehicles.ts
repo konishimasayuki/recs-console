@@ -11,8 +11,15 @@ export const OFFLINE_AFTER_MS = REPORT_INTERVAL_SEC * 3 * 1000;
 
 export type Vehicle = {
   id: string;
-  name: string;
-  memo: string;
+  name: string;        // 車台番号（例: JF1-2204248）
+  memo: string;        // 備考
+  model: string;       // 車種
+  customer: string;    // 利用者
+  firstReg: string;    // 初年度登録年月（YYYY-MM）
+  katashiki: string;   // 型式
+  group: string;       // 所属グループ（エンジン / スリーエイト など）
+  staff: string;       // 担当者
+  payment: string;     // 支払方法
   desired: 0 | 1;      // サーバーが指示している状態（1=始動阻止）
   actual: 0 | 1 | -1;  // 車両が最後に報告した状態（-1=未報告）
   pending: 0 | 1;      // 指示がまだ車両に反映されていない
@@ -41,6 +48,13 @@ function toVehicle(id: string, h: Record<string, string> | null): Vehicle {
     id,
     name: h?.name ?? "",
     memo: h?.memo ?? "",
+    model: h?.model ?? "",
+    customer: h?.customer ?? "",
+    firstReg: h?.firstReg ?? "",
+    katashiki: h?.katashiki ?? "",
+    group: h?.group ?? "",
+    staff: h?.staff ?? "",
+    payment: h?.payment ?? "",
     desired: h?.desired === "1" ? 1 : 0,
     actual: h?.actual === "1" ? 1 : h?.actual === "0" ? 0 : -1,
     pending: h?.pending === "1" ? 1 : 0,
@@ -71,9 +85,11 @@ async function addLog(e: OpLog) {
   await store().ltrim("oplog", 0, 1999);
 }
 
-export async function listLogs(limit = 200): Promise<OpLog[]> {
-  const rows = await store().lrange("oplog", 0, limit - 1);
-  return rows.map((r) => (typeof r === "string" ? JSON.parse(r) : r));
+export async function listLogs(limit = 200, id?: string): Promise<OpLog[]> {
+  // 車両ごとの履歴は全体の新しい2000件から絞り込む
+  const rows = await store().lrange("oplog", 0, id ? 1999 : limit - 1);
+  const all: OpLog[] = rows.map((r) => (typeof r === "string" ? JSON.parse(r) : r));
+  return id ? all.filter((l) => l.id === id).slice(0, limit) : all;
 }
 
 export type Report = {
@@ -150,13 +166,35 @@ export async function setRelay(id: string, relay: 0 | 1, by: string, note?: stri
   return getVehicle(id);
 }
 
-export async function updateInfo(id: string, name: string, memo: string, by: string) {
+// 管理画面で編集できる項目と最大文字数
+export const INFO_FIELDS = {
+  name: 50, model: 50, customer: 50, firstReg: 7, katashiki: 30,
+  group: 30, staff: 30, payment: 30, memo: 500,
+} as const;
+export type InfoField = keyof typeof INFO_FIELDS;
+const INFO_LABEL: Record<InfoField, string> = {
+  name: "車台番号", model: "車種", customer: "利用者", firstReg: "初年度登録年月", katashiki: "型式",
+  group: "所属グループ", staff: "担当者", payment: "支払方法", memo: "備考",
+};
+
+export async function updateInfo(id: string, info: Partial<Record<InfoField, string>>, by: string) {
   const v = await getVehicle(id);
   if (!v) throw new Error("not found");
-  await store().hset(`veh:${id}`, { name: name.slice(0, 50), memo: memo.slice(0, 200) });
-  if (v.name !== name) {
-    await addLog({ ts: Date.now(), id, name, action: `車両名を変更（旧: ${v.name || "未設定"}）`, by });
+  const upd: Record<string, string> = {};
+  const changed: string[] = [];
+  for (const k of Object.keys(INFO_FIELDS) as InfoField[]) {
+    if (typeof info[k] !== "string") continue;
+    const val = info[k]!.trim().slice(0, INFO_FIELDS[k]);
+    if (val === v[k]) continue;
+    upd[k] = val;
+    changed.push(INFO_LABEL[k]);
   }
+  if (changed.length === 0) return v;
+  await store().hset(`veh:${id}`, upd);
+  await addLog({
+    ts: Date.now(), id, name: upd.name ?? v.name,
+    action: `車両情報を変更（${changed.join("・")}）`, by,
+  });
   return getVehicle(id);
 }
 

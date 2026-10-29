@@ -19,14 +19,14 @@ export async function GET(req: NextRequest) {
   });
 }
 
-// 車両名・メモの更新
+// 車両情報の更新 POST {"id":"sim001","name":"JF1-2204248","customer":"…",…}（送った項目だけ変わる）
 export async function POST(req: NextRequest) {
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const b = await req.json().catch(() => ({}));
   if (typeof b.id !== "string") return NextResponse.json({ error: "bad id" }, { status: 400 });
   try {
-    const v = await updateInfo(b.id, String(b.name ?? ""), String(b.memo ?? ""), user);
+    const v = await updateInfo(b.id, b, user);
     return NextResponse.json({ vehicle: v });
   } catch {
     return NextResponse.json({ error: "not found" }, { status: 404 });

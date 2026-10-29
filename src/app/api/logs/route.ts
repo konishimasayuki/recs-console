@@ -6,5 +6,6 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   if (!(await getUser(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  return NextResponse.json({ logs: await listLogs(200) });
+  const id = req.nextUrl.searchParams.get("id") ?? undefined;
+  return NextResponse.json({ logs: await listLogs(200, id) });
 }
