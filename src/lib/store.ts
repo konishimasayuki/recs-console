@@ -22,8 +22,17 @@ class UpstashStore implements Store {
     this.r = new Redis({ url: REDIS_URL!, token: REDIS_TOKEN!, automaticDeserialization: false });
   }
   async hgetall(key: string) {
-    const v = await this.r.hgetall<Record<string, string>>(key);
-    return v && Object.keys(v).length ? v : null;
+    // automaticDeserialization:false だと hgetall は [k1, v1, k2, v2, ...] の配列で返ってくる。
+    // どちらの形でも「文字列→文字列」のオブジェクトにそろえる
+    const raw = (await this.r.hgetall(key)) as unknown;
+    if (!raw) return null;
+    const out: Record<string, string> = {};
+    if (Array.isArray(raw)) {
+      for (let i = 0; i + 1 < raw.length; i += 2) out[String(raw[i])] = String(raw[i + 1]);
+    } else {
+      for (const [k, v] of Object.entries(raw as Record<string, unknown>)) out[k] = String(v);
+    }
+    return Object.keys(out).length ? out : null;
   }
   async hset(key: string, obj: Record<string, string | number>) {
     const s: Record<string, string> = {};
